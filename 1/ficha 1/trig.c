@@ -1,6 +1,6 @@
 #include <math.h>
 #include <stdio.h>
-
+//compilar com -lm como ultimo argumento
 
 #define START 0
 #define ONE_TURN 360
