@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
 		/* get the file size */
 		struct stat info;
-		int ret = lstat(argv[1], &info);
+		int ret = lstat(argv[counter], &info);
 		if (ret == -1) {
 			printf("error: cannot stat %s\n", argv[counter]);
 			return EXIT_FAILURE;
