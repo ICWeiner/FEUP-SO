@@ -10,51 +10,92 @@
 #include <sys/types.h>
 
 #define BUFSIZE 256
+#define READ_END 0
+#define WRITE_END 1
 
-int parent(char *file, int pipes[2]){
-    int file = open(file,"r");
-    if(file == 1){
-        fprintf(stderr, "Failed to open the file %s. Cause: %s\n", file, strerror(errno));
+int parent(char *file, int pipes_fd[2]){
+    close(pipes_fd[READ_END]);
+
+    int file_fd = open(file,O_RDONLY);
+
+    if (file_fd == -1) {
+        fprintf(stderr, "Failed to open file '%s'. Cause: %s\n", file,
+                strerror(errno));
+        close(pipes_fd[WRITE_END]);
         return EXIT_FAILURE;
     }
     char buf[BUFSIZE];
-    int bytes; 
-    while ((bytes = read(file, buf, BUFSIZE)) > 0) {
-        if (write(pipes[1], buf, bytes) == -1) {
+    int bytes;
+
+    while ((bytes = read(file_fd, buf, BUFSIZE)) > 0) {
+        if (write(pipes_fd[1], buf, bytes) == -1) {
             fprintf(stderr, "Failed to write to pipe. Cause: %s\n",
                     strerror(errno));
-            close(file);
-            close(pipes[1]);
+            close(file_fd);
+            close(pipes_fd[1]);
             return EXIT_FAILURE;
         }
     }
-    return 0;
+    if (bytes == -1) { // handle errors while reading file
+        fprintf(stderr, "Error while reading '%s'. Cause: %s\n", file,
+                strerror(errno));
+        close(file_fd);
+        close(pipes_fd[WRITE_END]);
+        return EXIT_FAILURE;
+    }
+
+    close(pipes_fd[WRITE_END]);
+    close(file_fd);
+    return EXIT_SUCCESS;
 }
 
-int child(int pipes[2]){
-    return 0;
+int child(int pipes_fd[2]){
+    /* close pipe writing end */
+    close(pipes_fd[WRITE_END]);
+
+    /* read file in chunks of BUFSIZE and write to pipe */
+    char buf[BUFSIZE];
+    int bytes;
+    while ((bytes = read(pipes_fd[READ_END], buf, BUFSIZE)) > 0) {
+        write(STDOUT_FILENO, buf, bytes); // write to STDOUT
+    }
+
+    if (bytes == -1) { // handle errors while reading from pipe
+        fprintf(stderr, "Error while reading from pipe. Cause: %s\n",
+                strerror(errno));
+        close(pipes_fd[READ_END]);
+        return EXIT_FAILURE;
+    }
+
+    /* close pipe */
+    close(pipes_fd[READ_END]);
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char *argv[]){
     pid_t pid;
-    int pipes[2];
+    int pipes_fd[2];
+
     //Create and open pipe
-    if(pipe(pipes)<0){
+    if(pipe(pipes_fd)<0){
         perror("pipe error");
         exit(EXIT_FAILURE);
     }
     if((pid=fork())<0){
         perror("fork error");
         exit(EXIT_FAILURE);
-    }else if(pid>0){ 
-        //Reading from parent and pass to pipe
-        int gen1 = parent(argv[1], pipes[2]);
-        if(waitpid(pid, NULL, 0) < 0){ //waiting for child
+    }else if(pid>0){
+        /* parent */
+        int r = parent(argv[1], pipes_fd);
+
+        /* wait for child and exit */
+        if (waitpid(pid, NULL, 0) < 0) {
             fprintf(stderr, "Cannot wait for child: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
-        }   
-        //
+            return EXIT_FAILURE;
+        }
+
+        return r;
     }else{
-        return child(pipes[2]);
+        return child(pipes_fd);
     }
 }
