@@ -45,14 +45,16 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   } 
 
-  int array1[m1_x*m1_y];
-  int array2[m2_x*m2_y];
+  int array1[m1_x][m1_y];
+  int array2[m2_x][m2_y];
 
-  for(int i=0; i<m1_x*m1_y ;i++)
-    fscanf(f1, "%d",&array1[i]);
+  for(int i=0; i<m1_x ;i++)
+    for(int j=0; j<m1_y ;j++)
+      fscanf(f1, "%d",&array1[i][j]);
   
-  for(int i=0; i<m2_x*m2_y ;i++)
-    fscanf(f2, "%d",&array2[i]);
+  for(int i=0; i<m2_x ;i++)
+    for(int j=0; j<m2_y ;j++)
+      fscanf(f2, "%d",&array2[i][j]);
 
   // check if line from file one was read to char pointer
   /*if (fgets(l_one, 4, argv[1]) == NULL)
@@ -84,4 +86,7 @@ int main(int argc, char *argv[])
 }
 
 */
+
+  fclose(f1);
+  fclose(f2);
 }
