@@ -36,25 +36,43 @@ int main(int argc, char *argv[])
   int m1_x, m1_y, m2_x, m2_y;
   char buffer1, buffer2;
 
-  fscanf(f1, "%d %c %d",&m1_x,&buffer1,&m1_y);
-  fscanf(f2, "%d %c %d",&m2_x,&buffer2,&m2_y);
+  fscanf(f1, "%d %c %d", &m1_x, &buffer1, &m1_y);
+  fscanf(f2, "%d %c %d", &m2_x, &buffer2, &m2_y);
 
   if (m1_x != m2_x || m1_y != m2_y)
   {
     fprintf(stderr, "error: matrices have different sizes\n");
     exit(EXIT_FAILURE);
-  } 
+  }
 
   int array1[m1_x][m1_y];
   int array2[m2_x][m2_y];
 
-  for(int i=0; i<m1_x ;i++)
-    for(int j=0; j<m1_y ;j++)
-      fscanf(f1, "%d",&array1[i][j]);
-  
-  for(int i=0; i<m2_x ;i++)
-    for(int j=0; j<m2_y ;j++)
-      fscanf(f2, "%d",&array2[i][j]);
+  for (int i = 0; i < m1_x; i++)
+  {
+    for (int j = 0; j < m1_y; j++)
+    {
+      fscanf(f1, "%d", &array1[i][j]);
+    }
+  }
+
+  for (int i = 0; i < m2_x; i++)
+  {
+    for (int j = 0; j < m2_y; j++)
+    {
+      fscanf(f2, "%d", &array2[i][j]);
+    }
+  }
+
+  fprintf(stdout, "%dx%d\n", m1_x, m2_y);
+  for (int i = 0; i < m1_x; i++)
+  {
+    for (int j = 0; j < m1_y; j++)
+    {
+      fprintf(stdout, "%d\t", array1[i][j] + array2[i][j]);
+    }
+    fprintf(stdout, "\n");
+  }
 
   // check if line from file one was read to char pointer
   /*if (fgets(l_one, 4, argv[1]) == NULL)
@@ -73,7 +91,7 @@ int main(int argc, char *argv[])
   {
     fprintf(stderr, "error: matrices have different sizes\n");
     exit(EXIT_FAILURE);
-  } 
+  }
 
   // ler o ficheiro e por dentro do array
   // e depois meter esse array para dentro da memoria partilhada
@@ -86,7 +104,7 @@ int main(int argc, char *argv[])
 }
 
 */
-
+  fclose(stdout);
   fclose(f1);
   fclose(f2);
 }
