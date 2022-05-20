@@ -13,8 +13,14 @@
 #define READ_END 0
 #define WRITE_END 1
 
-int parent(char *file, int pipes_fd[2]){
-    close(pipes_fd[READ_END]);
+
+struct wordsCypher {
+    char* wordA;
+    char* wordB;
+};
+
+int parent( int pipes_fd[2]){
+    /*close(pipes_fd[READ_END]);
 
     int file_fd = open(file,O_RDONLY);
 
@@ -46,19 +52,49 @@ int parent(char *file, int pipes_fd[2]){
     }
 
     close(pipes_fd[WRITE_END]);
-    close(file_fd);
+    close(file_fd);*/
     return EXIT_SUCCESS;
 }
 
-int child(int pipes_fd[2]){
-    /* close pipe writing end */
-    close(pipes_fd[WRITE_END]);
+int child(int pipes_fd[2])
+    FILE* fp = fopen("cypher.txt","r");
 
-    /* read file in chunks of BUFSIZE and write to pipe */
+    if (fp == NULL) {
+        close(pipes_fd[WRITE_END]);
+        return EXIT_FAILURE;
+    }else{
+        char c;
+        char buf[20]; //por favor nao testar com palavras maiores que 20
+        int i = 0,j = 0, flag = 0;
+        struct wordsCypher words* = malloc(sizeof(struct wordsCypher));
+        while ( ( c = fgetc(fp)) != EOF){
+            printf ("%c", c);
+            if(c!=' '){
+                buf[i] = c;
+                i++;
+            }else if(flag == 0){// guardar palavra em wordA
+                strncpy(words[j]->wordA, buf, 20);
+                i = 0; //reset buf counter
+                flag = 1; //switch to wordB
+            }else{
+                words[j] -> wordB = buf;
+                i = 0;
+                j++;
+                flag = 0;
+                words = realloc(sizeof(struct wordsCypher * (j + 1 ) ) );
+            }
+        }
+    }
+
+    // close pipe writing end
+    //close(pipes_fd[WRITE_END]);
+
+    /*
+    // read file in chunks of BUFSIZE and write to pipe
     char buf[BUFSIZE];
     int bytes;
     while ((bytes = read(pipes_fd[READ_END], buf, BUFSIZE)) > 0) {
-        write(STDOUT_FILENO, buf, bytes); // write to STDOUT
+        //write(STDOUT_FILENO, buf, bytes); // write to STDOUT
     }
 
     if (bytes == -1) { // handle errors while reading from pipe
@@ -68,10 +104,12 @@ int child(int pipes_fd[2]){
         return EXIT_FAILURE;
     }
 
-    /* close pipe */
-    close(pipes_fd[READ_END]);
+    // close pipe
+    close(pipes_fd[READ_END]);*/
     return EXIT_SUCCESS;
 }
+
+
 
 int main(int argc, char *argv[]){
     pid_t pid;
@@ -87,16 +125,17 @@ int main(int argc, char *argv[]){
         perror("fork error");
         exit(EXIT_FAILURE);
     }else if(pid>0){
-        /* parent */
+        // parent
+        /*
         int r = parent(argv[1], pipes_fd);
 
-        /* wait for child and exit */
+        // wait for child and exit
         if (waitpid(pid, NULL, 0) < 0) {
             fprintf(stderr, "Cannot wait for child: %s\n", strerror(errno));
             return EXIT_FAILURE;
         }
 
-        return r;
+        return r;*/
     }else{
         return child(pipes_fd);
     }
