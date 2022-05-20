@@ -24,6 +24,7 @@ int parent(char *file, int pipes_fd[2]){
         close(pipes_fd[WRITE_END]);
         return EXIT_FAILURE;
     }
+
     char buf[BUFSIZE];
     int bytes;
 
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]){
         perror("pipe error");
         exit(EXIT_FAILURE);
     }
+
     if((pid=fork())<0){
         perror("fork error");
         exit(EXIT_FAILURE);
