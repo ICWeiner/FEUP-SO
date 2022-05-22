@@ -8,6 +8,7 @@
 
 int checkRows(FILE* f1, FILE* f2);
 int checkColumns(FILE* f1, FILE* f2);
+int getMatrixSize(int m_x, int m_y);
 int *readMatrices(FILE* f1, int m_x, int m_y);
 void calculateRow(int *marray1, int *marray2, int i, int rows);
 void writeMatrix(int *marray, int m_x, int m_y);
@@ -67,7 +68,10 @@ int main(int argc, char *argv[]) {
   fclose(stdout);
   fclose(f1);
   fclose(f2);
+  munmap(marray1,getMatrixSize(m_x,m_y));
+  munmap(marray2,getMatrixSize(m_x,m_y));
 
+  return EXIT_SUCCESS;
 }
 
 int checkRows(FILE* f1, FILE* f2){
@@ -99,17 +103,21 @@ int checkColumns(FILE* f1, FILE* f2){
   return m1_y;
 }
 
-int *readMatrices(FILE* f1, int m_x, int m_y){
-
+int getMatrixSize(int m_x, int m_y){
   int arr[m_x * m_y];
-  size_t size_array = sizeof(arr);  
-  int *marray1 = mmap(NULL, size_array , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, 0, 0);
+  size_t size_array = sizeof(arr);
+  return size_array;
+}
+
+int *readMatrices(FILE* f1, int m_x, int m_y){
+  int size_array = getMatrixSize(m_x,m_y);
+  int *marray = mmap(NULL, size_array , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, 0, 0);
 
   for (int i = 0; i < m_x * m_y; i++) {
-    fscanf(f1, "%d", &marray1[i]);
+    fscanf(f1, "%d", &marray[i]);
   }
 
-  return marray1;
+  return marray;
 }
 
 void calculateRow(int *marray1, int *marray2, int i, int rows){
