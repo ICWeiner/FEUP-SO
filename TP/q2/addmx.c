@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
     writeMatrix(marray1, m_x, m_y);
   }
 
-  fclose(stdout);
   fclose(f1);
   fclose(f2);
   munmap(marray1,getMatrixSize(m_x,m_y));
