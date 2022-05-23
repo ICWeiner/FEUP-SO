@@ -1,0 +1,3 @@
+/home/carlos/Feup2022/2semestre/Sistemas_Operativos/Projeto_SO/TP/q2/build/CMakeFiles/rebuild_cache.dir
+/home/carlos/Feup2022/2semestre/Sistemas_Operativos/Projeto_SO/TP/q2/build/CMakeFiles/edit_cache.dir
+/home/carlos/Feup2022/2semestre/Sistemas_Operativos/Projeto_SO/TP/q2/build/CMakeFiles/q2.dir
