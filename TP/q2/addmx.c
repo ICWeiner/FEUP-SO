@@ -1,44 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <fcntl.h>
 
-int checkRows(FILE* f1, FILE* f2);
-int checkColumns(FILE* f1, FILE* f2);
-int getMatrixSize(int m_x, int m_y);
-int *readMatrices(FILE* f1, int m_x, int m_y);
-void calculateRow(int *marray1, int *marray2, int i, int rows);
-void writeMatrix(int *marray, int m_x, int m_y);
+int checkRows(FILE* f1, FILE* f2); // function to check if rows are equal
+int checkColumns(FILE* f1, FILE* f2); // function to check if columns are equal
+int getMatrixSize(int m_x, int m_y); // function to get the size needed to create mapped memory
+int *readMatrices(FILE* f1, int m_x, int m_y); // function that creates the shared memory and reads from input file to said memory
+void calculateRow(int *marray1, int *marray2, int i, int rows); // function that calculates row of result matrix
+void writeMatrix(int *marray, int m_x, int m_y); // function that writes result matrix to output
 
 int main(int argc, char *argv[]) {
   FILE *f1;
   FILE *f2;
 
-  // check if exactly two arguments are present
+  // check if exactly two files are present
   if (argc != 3) {
     fprintf(stderr, "usage: addmx file1 file2\n");
     exit(EXIT_FAILURE);
   }
 
-  // check if file one can be opened and is readable
+  // check if first file can be opened and is readable
   f1 = fopen(argv[1], "r");
   if (f1 == NULL) {
     fprintf(stderr, "error: cannot open %s\n", argv[1]);
     exit(EXIT_FAILURE);
   }
 
-  // check if file two can be opened and is readable
+  // check if second file can be opened and is readable
   f2 = fopen(argv[2], "r");
   if (f2 == NULL) {
     fprintf(stderr, "error: cannot open %s\n", argv[2]);
     exit(EXIT_FAILURE);
   }
 
-  // gets two first digits too check if matrices are equal
-  int m_x, m_y;
+  int m_x, m_y; // number of rows and columns of the matrices
   m_x = checkRows(f1, f2);
   m_y = checkColumns(f1, f2);
   int *marray1 = readMatrices(f1, m_x, m_y);
@@ -46,7 +43,7 @@ int main(int argc, char *argv[]) {
 
   pid_t pid; // process id's
   int i;
-  for(i=0; i<m_y ;i++){
+  for(i=0; i<m_y ;i++){ // making column number of forks
     if ((pid = fork()) == -1) {
       perror("fork");
       return EXIT_FAILURE;
@@ -54,17 +51,18 @@ int main(int argc, char *argv[]) {
     if(pid == 0) break;
   }
 
-  if(pid == 0){
+  if(pid == 0){ // child process
     calculateRow(marray1, marray2, i, m_x);
   }
-  if(pid != 0){
-    if (waitpid(pid, NULL, 0) == -1) {
+  if(pid != 0){ // parent process
+    if (waitpid(pid, NULL, 0) == -1) {  // waiting for childrens to finish its process
       perror("wait");
       return EXIT_FAILURE;
     }
     writeMatrix(marray1, m_x, m_y);
   }
 
+  // closing files and releasing mapped memory
   fclose(f1);
   fclose(f2);
   munmap(marray1,getMatrixSize(m_x,m_y));

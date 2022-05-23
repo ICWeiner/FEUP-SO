@@ -1,1 +1,0 @@
-/usr/bin/cc    CMakeFiles/q2.dir/addmx.c.o  -o q2 
