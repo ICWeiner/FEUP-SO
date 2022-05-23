@@ -1,4 +1,1 @@
-evil good
-dark light
-black white
-night day
+evil good dark light black white night day
