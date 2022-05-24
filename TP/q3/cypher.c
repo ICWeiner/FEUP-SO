@@ -22,21 +22,34 @@ struct wordsCypher {
 };
 
 int parent(int pipes_fd[2]){
-	/*close(pipes_fd[READ_END]);
+	//fscanf(stdin,"%s",reading);
+	
 
-	int file_fd = open(file,O_RDONLY);
-
-	if (file_fd == -1) {
+	/*if (file_fd == -1) {
 		fprintf(stderr, "Failed to open file '%s'. Cause: %s\n", file,
 				strerror(errno));
 		close(pipes_fd[WRITE_END]);
 		return EXIT_FAILURE;
+	}*/
+
+	close(pipes_fd[READ_END]);
+
+	char reading[10];
+	char space[1];
+	space[0] = ' ';
+
+	while(fscanf(stdin,"%s",reading) != EOF){
+		int len = strlen(reading);
+		//printf("%s %ld",reading ,strlen(reading));
+		if (write(pipes_fd[1], reading, len) == -1 || write(pipes_fd[1], space, 1) == -1 ) {//write to pipe word by word
+			fprintf(stderr, "Failed to write to pipe. Cause: %s\n",
+					strerror(errno));
+		}
 	}
 
-	char buf[BUFSIZE];
-	int bytes;
-
-	while ((bytes = read(file_fd, buf, BUFSIZE)) > 0) {
+	close(pipes_fd[WRITE_END]);//close 
+	
+	/*while ((bytes = read(file_fd, buf, BUFSIZE)) > 0) {
 		if (write(pipes_fd[1], buf, bytes) == -1) {
 			fprintf(stderr, "Failed to write to pipe. Cause: %s\n",
 					strerror(errno));
@@ -51,10 +64,10 @@ int parent(int pipes_fd[2]){
 		close(file_fd);
 		close(pipes_fd[WRITE_END]);
 		return EXIT_FAILURE;
-	}
+	}*/
 
 	close(pipes_fd[WRITE_END]);
-	close(file_fd);*/
+	//close(file_fd);
 	return EXIT_SUCCESS;
 }
 
@@ -124,35 +137,47 @@ int child(int pipes_fd[2]){
 			}
 		}
 
-		words[j].wordB = malloc(i * sizeof(char) ); //TO-DO:last word isnt being stored in the cycle, probbably sohuld fix that
+		words[j].wordB = malloc(i * sizeof(char) ); //TO-DO:last word isnt being stored in the cycle, probably sohuld fix that
 		strncpy(words[j].wordB, buf, i);
 
 		wordssize = j + 1;//read above comment
 
-		for(int i = 0; i < wordssize ; i++){
-			printf("%s %s\n",words[i].wordA,words[i].wordB);
-		}
 
-		// close pipe writing end
-		//close(pipes_fd[WRITE_END]);
+		close(pipes_fd[WRITE_END]);
 
-		/*
-		// read file in chunks of BUFSIZE and write to pipe
-		char buf[BUFSIZE];
+		
+		// read pipe in chunks
+		/*char pipe_buf[231];
 		int bytes;
-		while ((bytes = read(pipes_fd[READ_END], buf, BUFSIZE)) > 0) {
-			//write(STDOUT_FILENO, buf, bytes); // write to STDOUT
+		while ((bytes = read(pipes_fd[READ_END], pipe_buf, 231)) > 0) {
+			//printf("%s\n",pipe_buf);
+			//printf("%d\n",bytes);
+			write(STDOUT_FILENO, pipe_buf, bytes);
+		}*/
+
+		char reading[16];
+
+
+
+		while(fscanf(pipes_fd[READ_END],"%s",reading) != EOF){
+			int len = strlen(reading);
+			//printf("%s %ld",reading ,strlen(reading));
+			//printf("%s\n",reading);
+
 		}
 
-		if (bytes == -1) { // handle errors while reading from pipe
+		write(STDOUT_FILENO, "ola", 3);
+
+
+		/*if (bytes == -1) { // handle errors while reading from pipe
 			fprintf(stderr, "Error while reading from pipe. Cause: %s\n",
 					strerror(errno));
 			close(pipes_fd[READ_END]);
 			return EXIT_FAILURE;
-		}
+		}*/
 
-		// close pipe
-		close(pipes_fd[READ_END]);*/
+		// close pipe*/
+		close(pipes_fd[READ_END]);
 		return EXIT_SUCCESS;
 
 	}
@@ -177,7 +202,7 @@ int main(int argc, char *argv[]){
 		// parent
 		//int r = parent(stdin, pipes_fd);
 
-		/*int r = parent(pipes_fd);
+		int r = parent(pipes_fd);
 
 		// wait for child and exit
 		if (waitpid(pid, NULL, 0) < 0) {
@@ -185,7 +210,7 @@ int main(int argc, char *argv[]){
 			return EXIT_FAILURE;
 		}
 
-		return r;*/
+		return r;
 	}else{
 		return child(pipes_fd);
 	}
