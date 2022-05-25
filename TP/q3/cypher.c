@@ -109,7 +109,7 @@ struct wordsCypher* read_into_struct(FILE* fp){
         return words;
 };
 
-int parent(int pipes_fd[2]){
+int parent(int to_child_fd[2], int to_parent_fd[2]){
 	//fscanf(stdin,"%s",reading);
 
 	/*if (file_fd == -1) {
@@ -119,7 +119,8 @@ int parent(int pipes_fd[2]){
 		return EXIT_FAILURE;
 	}*/
 
-	close(pipes_fd[READ_END]);//TODO: é necessario error prevention para stdin/stdout
+    close(to_child_fd[READ_END]);
+    close(to_parent_fd[WRITE_END]);//TODO: é necessario error prevention para stdin/stdout?
 
 	char buffer[10];
 	char space[1];
@@ -128,13 +129,13 @@ int parent(int pipes_fd[2]){
 	while(fscanf(stdin,"%s",buffer) != EOF){
 		int len = strlen(buffer);
 		//printf("%s %ld",reading ,strlen(reading));
-		if (write(pipes_fd[1], buffer, len) == -1 || write(pipes_fd[1], space, 1) == -1 ) {//write to pipe word by word, add space after word
+		if (write(to_child_fd[1], buffer, len) == -1 || write(to_child_fd[1], space, 1) == -1 ) {//write to pipe word by word, add space after word
 			fprintf(stderr, "Failed to write to pipe. Cause: %s\n",
 					strerror(errno));
 		}
 	}
 
-	close(pipes_fd[WRITE_END]);//close 
+
 	
 	/*while ((bytes = read(file_fd, buf, BUFSIZE)) > 0) {
 		if (write(pipes_fd[1], buf, bytes) == -1) {
@@ -153,22 +154,27 @@ int parent(int pipes_fd[2]){
 		return EXIT_FAILURE;
 	}*/
 
-	close(pipes_fd[WRITE_END]);
+    close(to_child_fd[WRITE_END]);
+    //close(to_parent_fd[READ_END]);
+
+
 	//close(file_fd);
 	return EXIT_SUCCESS;
 }
 
-int child(int pipes_fd[2]){
+int child(int to_child_fd[2], int to_parent_fd[2]){
 	FILE* fp = fopen("cypher.txt","r");
 
+
 	if (fp == NULL) {
-		close(pipes_fd[WRITE_END]);
+		//close(pipes_fd[WRITE_END]);
 		return EXIT_FAILURE;
 	}else{
 
         struct wordsCypher* words = read_into_struct(fp);
 
-		close(pipes_fd[WRITE_END]);
+		close(to_child_fd[WRITE_END]);
+        close(to_parent_fd[READ_END]);
 
 		// read pipe in chunks
 		/*char pipe_buf[231];
@@ -180,12 +186,12 @@ int child(int pipes_fd[2]){
 		}*/
 
 		char read_word[16];
-        char text[BUFSIZE];// reallocar se necessario
+        char text[BUFSIZE];//TODO:reallocar se necessario
         int text_counter = 0;
         int words_quant = sizeof(struct wordsCypher) / sizeof (words);
 
 
-        FILE *pipe_read_stream = fdopen(pipes_fd[READ_END],"r");
+        FILE *pipe_read_stream = fdopen(to_child_fd[READ_END],"r");
 
 		while(fscanf(pipe_read_stream,"%s",read_word) != EOF){
 			int read_len = strlen(read_word);
@@ -194,6 +200,7 @@ int child(int pipes_fd[2]){
                 if(str_compare(words[i].wordA,read_word,words[i].Asize) == 0){// words are the same
                     concat( text,words[i].wordB,text_counter,words[i].Bsize);
                     text_counter += words[i].Bsize ;
+                    if(read_len)
                     text[text_counter] = ' ';
                     text_counter++;
                     break;
@@ -221,14 +228,12 @@ int child(int pipes_fd[2]){
 
                 //printf("'%s' is NOT equal to '%s' or '%s', apparently\n",read_word,words[i].wordA,words[i].wordB);
             }
-
-			//printf("%c %ld\n",read_word[len - 1] ,strlen(read_word));
-			//printf("%s \n",read_word);
 		}
 
-        printf("%s",text);
 
-		//write(STDOUT_FILENO, "ola", 3);
+        //printf("%s",text);
+
+		write(to_parent_fd[WRITE_END], text, text_counter);
 
 		/*if (bytes == -1) { // handle errors while reading from pipe
 			fprintf(stderr, "Error while reading from pipe. Cause: %s\n",
@@ -237,8 +242,9 @@ int child(int pipes_fd[2]){
 			return EXIT_FAILURE;
 		}*/
 
-		// close pipe*/
-		close(pipes_fd[READ_END]);
+        close(to_child_fd[READ_END]);
+        close(to_parent_fd[WRITE_END]);
+
 		return EXIT_SUCCESS;
 
 	}
@@ -246,10 +252,12 @@ int child(int pipes_fd[2]){
 
 int main(int argc, char *argv[]){
 	pid_t pid;
-	int pipes_fd[2];
+	int to_child_fd[2];
+    int to_parent_fd[2];
+    //printf("hi");
 
 	//Create and open pipe
-	if(pipe(pipes_fd)<0){
+	if(pipe(to_child_fd) < 0 || pipe(to_parent_fd) < 0 ){
 		perror("pipe error");
 		exit(EXIT_FAILURE);
 	}
@@ -258,10 +266,7 @@ int main(int argc, char *argv[]){
 		perror("fork error");
 		exit(EXIT_FAILURE);
 	}else if(pid>0){
-		// parent
-		//int r = parent(stdin, pipes_fd);
-
-		int r = parent(pipes_fd);
+		int r = parent(to_child_fd,to_parent_fd);
 
 		// wait for child and exit
 		if (waitpid(pid, NULL, 0) < 0) {
@@ -269,10 +274,14 @@ int main(int argc, char *argv[]){
 			return EXIT_FAILURE;
 		}
 
-
+        char buf[8];
+        int bytes;
+        while( (bytes=read(to_parent_fd[READ_END], buf, 8)) > 0 ) {
+            write(STDOUT_FILENO,buf,bytes);
+        }
 
 		return r;
 	}else{
-		return child(pipes_fd);
+		return child(to_child_fd,to_parent_fd);
 	}
 }
