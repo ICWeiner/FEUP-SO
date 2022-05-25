@@ -106,6 +106,8 @@ struct wordsCypher* read_into_struct(FILE* fp){
 
         //words_quant = j + 1;//read above comment
 
+        free(buf);
+
         return words;
 };
 
@@ -135,17 +137,7 @@ int parent(int to_child_fd[2], int to_parent_fd[2]){
 		}
 	}
 
-
-	
-	/*while ((bytes = read(file_fd, buf, BUFSIZE)) > 0) {
-		if (write(pipes_fd[1], buf, bytes) == -1) {
-			fprintf(stderr, "Failed to write to pipe. Cause: %s\n",
-					strerror(errno));
-			close(file_fd);
-			close(pipes_fd[1]);
-			return EXIT_FAILURE;
-		}
-	}
+    /*
 	if (bytes == -1) { // handle errors while reading file
 		fprintf(stderr, "Error while reading '%s'. Cause: %s\n", file,
 				strerror(errno));
@@ -157,33 +149,20 @@ int parent(int to_child_fd[2], int to_parent_fd[2]){
     close(to_child_fd[WRITE_END]);
     //close(to_parent_fd[READ_END]);
 
-
-	//close(file_fd);
 	return EXIT_SUCCESS;
 }
 
 int child(int to_child_fd[2], int to_parent_fd[2]){
 	FILE* fp = fopen("cypher.txt","r");
 
-
 	if (fp == NULL) {
-		//close(pipes_fd[WRITE_END]);
+		close(to_parent_fd[WRITE_END]);
 		return EXIT_FAILURE;
 	}else{
-
         struct wordsCypher* words = read_into_struct(fp);
 
 		close(to_child_fd[WRITE_END]);
         close(to_parent_fd[READ_END]);
-
-		// read pipe in chunks
-		/*char pipe_buf[231];
-		int bytes;
-		while ((bytes = read(pipes_fd[READ_END], pipe_buf, 231)) > 0) {
-			//printf("%s\n",pipe_buf);
-			//printf("%d\n",bytes);
-			write(STDOUT_FILENO, pipe_buf, bytes);
-		}*/
 
 		char read_word[16];
         char text[BUFSIZE];//TODO:reallocar se necessario
@@ -205,9 +184,6 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
                     text_counter++;
                     break;
                     //printf(" '%s' is equal to '%s', apparently\n",read_word,words[i].wordA);
-
-                    //trocar e meter em text[]
-                    //adicionar carateres especiais, se estes existirem
                 }else if(str_compare(words[i].wordB,read_word,words[i].Bsize) == 0){
                     concat( text,words[i].wordA,text_counter,words[i].Asize);
                     text_counter += words[i].Asize ;
@@ -215,9 +191,6 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
                     text_counter++;
                     break;
                     //printf("'%s' is equal to '%s', apparently\n",read_word,words[i].wordB);
-
-                    //trocar e meter em text[]
-                    //adicionar carateres especiais, se estes existirem
                 }
             }
             if (j == words_quant){
@@ -231,7 +204,15 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
 		}
 
 
-        //printf("%s",text);
+
+        for(int i = 0; i < words_quant;i++){
+            free(words[i].wordA);
+            free(words[i].wordB);
+        }
+
+        free(words);
+        fclose(fp);
+        fclose(pipe_read_stream);
 
 		write(to_parent_fd[WRITE_END], text, text_counter);
 
