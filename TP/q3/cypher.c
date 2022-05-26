@@ -2,11 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <unistd.h>
-#include <sys/types.h>
+#include <sys/wait.h>
 
-#define BUFSIZE 1024
 #define READ_END 0
 #define WRITE_END 1
 
@@ -81,7 +79,7 @@ struct wordsCypher* read_into_struct(FILE* fp){//TODO: add error verification to
             }
         }
 
-        words[j].wordB = malloc(i * sizeof(char) ); //TO-DO:last word isnt being stored in the cycle, probably sohuld fix that
+        words[j].wordB = malloc(i * sizeof(char) ); //TO-DO:last word isnt being stored in the cycle, probably should fix that
         words[j].Bsize = i;
         strncpy(words[j].wordB, buf, i);
 
@@ -135,7 +133,7 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
 			int read_len = strlen(read_word);
             int i;//"i" is needed outside the for loop
 
-            for(i = 0; i < words_quant ; i++ ){//TODO:missing implementation to preserver special characters
+            for(i = 0; i < words_quant ; i++ ){//TODO:missing implementation to preserve special characters
                 if(str_compare(words[i].wordA,read_word,words[i].Asize) == 0){//word read from pipe is found, send back the other one
                     write(to_parent_fd[WRITE_END], words[i].wordB, words[i].Bsize);
                     break;
