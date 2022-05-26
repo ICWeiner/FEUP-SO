@@ -17,9 +17,9 @@ struct wordsCypher {//struct, holds 2 words and each of their sizes
 	int Bsize;
 };
 
-int str_compare(char str1[], char str2[], int size){
-    for( int i=0; i < size; i++) {
-        if( str1[i] == '\0' || str2[i] == '\0')
+int str_compare(char str1[], char str2[], int size) {
+    for (int i = 0; i < size; i++) {
+        if (str1[i] == '\0' || str2[i] == '\0')
             return -1;
         if (str1[i] != str2[i]) //one of these conditions means words are not the same
             return -1;
@@ -28,16 +28,10 @@ int str_compare(char str1[], char str2[], int size){
     return 0;
 }
 
-int concat(char *text,char *add, int add_start, int add_size){
-    for(int i = add_start, j = 0; i < add_size + add_start; i++ , j++){//add word to buffer from position x to x+len
-        text[i] = add[j];
-    }
-
-    return 0;
-}
-
 struct wordsCypher* read_into_struct(FILE* fp){//TODO: add error verification to malloc/realloc?
-        int i = 0,j = 0, flag = 0;//i used for counting chars, j used for counting word pairs, flag used for storing on wordA or wordB
+        int i = 0, //i used for counting chars,
+        j = 0, //j used for counting positions in struct,
+        flag = 0;  //flag used for storing choosing between storing on wordA or wordB
 
         size_t size = 8;
         char* buf = malloc( sizeof(char) * size);
@@ -66,8 +60,8 @@ struct wordsCypher* read_into_struct(FILE* fp){//TODO: add error verification to
                 size = 8;
                 buf = malloc( sizeof(char) * size);
 
-                i = 0; //reset buf counter
-                flag = 1; //switch to wordB
+                i = 0;
+                flag = 1;
             }else if(flag == 1){
                 buf[i] = '\0';
                 words[j].wordB = malloc(i * sizeof(char) );
@@ -130,9 +124,9 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
         close(to_parent_fd[READ_END]);
 
 		char read_word[16];
-        char text[BUFSIZE];//TODO:reallocar se necessario
-        int text_counter = 0;
         int words_quant = sizeof(struct wordsCypher) / sizeof (words);
+        char space[1];
+        space[0] = ' ';//read above
 
 
         FILE *pipe_read_stream = fdopen(to_child_fd[READ_END],"r");
@@ -141,32 +135,20 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
 			int read_len = strlen(read_word);
             int i;//"i" is needed outside the for loop
 
-            for(i = 0; i < words_quant ; i++ ){
-                if(str_compare(words[i].wordA,read_word,words[i].Asize) == 0){// words are the same
-                    concat( text,words[i].wordB,text_counter,words[i].Bsize);
-                    text_counter += words[i].Bsize ;
-                    //if(read_len) 
-                    //TODO:missing implementation to preserver special characters 
-                    text[text_counter] = ' ';
-                    text_counter++;
+            for(i = 0; i < words_quant ; i++ ){//TODO:missing implementation to preserver special characters
+                if(str_compare(words[i].wordA,read_word,words[i].Asize) == 0){//word read from pipe is found, send back the other one
+                    write(to_parent_fd[WRITE_END], words[i].wordB, words[i].Bsize);
                     break;
                 }else if(str_compare(words[i].wordB,read_word,words[i].Bsize) == 0){
-                    concat( text,words[i].wordA,text_counter,words[i].Asize);
-                    text_counter += words[i].Asize ;
-                    text[text_counter] = ' ';
-                    text_counter++;
+                    write(to_parent_fd[WRITE_END], words[i].wordA, words[i].Bsize);
                     break;
                 }
             }
             if (i == words_quant){
-                concat( text,read_word,text_counter,read_len);
-                text_counter+= read_len;
-                text[text_counter] = ' ';
-                text_counter++;
+                write(to_parent_fd[WRITE_END], read_word, read_len);
             }
+            write(to_parent_fd[WRITE_END], space, 1);//add a space character between words
 		}
-
-        write(to_parent_fd[WRITE_END], text, text_counter);
 
         for(int i = 0; i < words_quant;i++){//clear all words from struct
             free(words[i].wordA);
