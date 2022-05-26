@@ -10,7 +10,6 @@
 #define READ_END 0
 #define WRITE_END 1
 
-
 struct wordsCypher {//struct, holds 2 words and each of their sizes
 	char* wordA;
 	int Asize;
@@ -146,7 +145,8 @@ int child(int to_child_fd[2], int to_parent_fd[2]){
                 if(str_compare(words[i].wordA,read_word,words[i].Asize) == 0){// words are the same
                     concat( text,words[i].wordB,text_counter,words[i].Bsize);
                     text_counter += words[i].Bsize ;
-                    //if(read_len)
+                    //if(read_len) 
+                    //TODO:missing implementation to preserver special characters 
                     text[text_counter] = ' ';
                     text_counter++;
                     break;
