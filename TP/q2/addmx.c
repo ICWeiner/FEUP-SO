@@ -129,7 +129,7 @@ void writeMatrix(int *marray, int m_x, int m_y){
     fprintf(stdout, "%dx%d\n", m_x, m_y);
     for (int i = 0; i < m_x * m_y; i++) {
       fprintf(stdout, "%d\t", marray[i]);
-      if(n==2) {
+      if(n==(m_x-1)) {
         fprintf(stdout, "\n");
         n = 0;
       }
